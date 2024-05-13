@@ -3,9 +3,8 @@ const app = express();
 const port = process.env.PORT || 5001;
 const cors = require("cors");
 const bodyParser = require("body-parser");
-const { ServerApiVersion } = require("mongodb");
+const { ServerApiVersion, ObjectId } = require("mongodb");
 const MongoClient = require("mongodb").MongoClient;
-const ObjectId = require("mongodb").ObjectId;
 require("dotenv").config();
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.ozftyhw.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
@@ -47,45 +46,56 @@ async function run() {
         });
       });
 
-      app.get("/allProduct", (req, res) => {
-        productCollections.find({}).toArray((err, document) => {
-          res.send(document);
-        });
+      app.get("/allProduct", async (req, res) => {
+        try {
+          const result = await productCollections.find({}).toArray();
+          res.status(200).send(result);
+        } catch (error) {
+          res.status(500).send("Internal Server Error");
+        }
       });
-      app.get("/userOrder", (req, res) => {
-        orderCollections
-          .find({ email: req.query.email })
-          .toArray((err, document) => {
-            res.send(document);
-          });
-      });
-
-      app.get("/checkoutProduct/:id", (req, res) => {
-        productCollections
-          .find({ _id: ObjectId(req.params.id) })
-          .toArray((err, document) => {
-            res.send(document[0]);
-          });
+      app.get("/userOrder", async (req, res) => {
+        try {
+          const result = await orderCollections
+            .find({ email: req.query.email })
+            .toArray();
+          res.status(200).send(result);
+        } catch (error) {
+          res.status(500).send("Internal Server Error");
+        }
       });
 
-      app.delete("/deleteProduct/:id", (req, res) => {
-        productCollections
-          .deleteOne({
-            _id: ObjectId(req.params.id),
-          })
-          .then((result) => {
-            res.send(result.deletedCount > 0);
-          });
+      app.get("/checkoutProduct/:id", async (req, res) => {
+        try {
+          const result = await productCollections
+            .find({ _id: new ObjectId(req.params.id) })
+            .toArray();
+          res.status(200).send(result[0]);
+        } catch (error) {
+          res.status(500).send("Internal Server Error");
+        }
       });
 
-      app.delete("/deleteOrder/:id", (req, res) => {
-        orderCollections
-          .deleteOne({
-            _id: ObjectId(req.params.id),
-          })
-          .then((result) => {
-            res.send(result.deletedCount > 0);
+      app.delete("/deleteProduct/:id", async (req, res) => {
+        try {
+          const result = await productCollections.deleteOne({
+            _id: new ObjectId(req.params.id),
           });
+          res.status(200).send(result.acknowledged);
+        } catch (error) {
+          res.status(500).send("Internal Server Error");
+        }
+      });
+
+      app.delete("/deleteOrder/:id", async (req, res) => {
+        try {
+          const result = await orderCollections.deleteOne({
+            _id: new ObjectId(req.params.id),
+          });
+          res.status(200).send(result.acknowledged);
+        } catch (error) {
+          res.status(500).send("Internal Server Error");
+        }
       });
       //   client.close();
     });
